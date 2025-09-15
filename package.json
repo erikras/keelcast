@@ -1,0 +1,18 @@
+{
+  "name": "keelcast",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "build": "pnpm --recursive build",
+    "dev:frontend": "pnpm --filter @keelcast/frontend dev",
+    "dev:backend": "pnpm --filter @keelcast/backend dev",
+    "build:frontend": "pnpm --filter @keelcast/frontend build",
+    "build:backend": "pnpm --filter @keelcast/backend build",
+    "typecheck": "pnpm --recursive typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "typescript": "^5.8.3"
+  }
+}

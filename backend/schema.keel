@@ -1,0 +1,138 @@
+model Podcast {
+    fields {
+      rssUrl Text @unique
+      title Text?
+      description Text?
+      imageUrl Text?
+      url Text?
+      author Text?
+      category Text?
+      createdBy Identity
+    }
+
+    actions {
+        get podcast(id)
+        get podcastByRssUrl(rssUrl) {
+            @permission(expression: ctx.isAuthenticated)
+        }
+        list podcasts()
+        create createPodcast() with (rssUrl) {
+            @permission(expression: ctx.isAuthenticated)
+            @set(podcast.createdBy = ctx.identity)
+        }
+    }
+
+    @on([create], createPodcast)
+
+    @permission(
+        actions: [get, list],
+        expression: ctx.isAuthenticated
+    )
+}
+
+model PodcastSubscription {
+    fields {
+        podcast Podcast
+        subscriber Identity
+    }
+
+    actions {
+        get getSubscription(id)
+        list mySubscriptions() {
+            @where(podcastSubscription.subscriber == ctx.identity)
+        }
+        delete deleteSubscription(id)
+        create createSubscription() with (podcast.id) {
+            @permission(expression: ctx.isAuthenticated)
+            @set(podcastSubscription.subscriber = ctx.identity)
+        }
+    }
+
+    @permission(
+        actions: [get, list, create, delete],
+        expression: podcastSubscription.subscriber == ctx.identity
+    )
+}
+
+model Episode {
+    fields {
+        podcast Podcast
+        title Text
+        description Text?
+        url Text
+        audioUrl Text
+        publishedAt Timestamp
+        durationSeconds Number?
+    }
+
+    actions {
+        get getEpisode(id)
+        list episodes()
+        list episodesOfPodcast(podcast.id)
+        read unlistenedEpisodes (UnlistenedEpisodesInput) returns (UnlistenedEpisodesResponse)
+    }
+
+    @permission(
+        actions: [get, list],
+        expression: ctx.isAuthenticated
+    )
+}
+
+model ListenedEpisode {
+  fields {
+    episode Episode
+    listener Identity
+    listenedAt Timestamp
+    secondsListened Number @default(0)
+    listened Boolean @default(false)
+  }
+
+  actions {
+    get getListenedEpisode(id)
+    list getListenedEpisodeByEpisode(episode.id) {
+      @where(listenedEpisode.listener == ctx.identity)
+    }
+    create createListenedEpisode() with (episode.id) {
+      @permission(expression: ctx.isAuthenticated)
+      @set(listenedEpisode.listener = ctx.identity)
+      @set(listenedEpisode.listenedAt = ctx.now)
+    }
+    write upsertListenedEpisode(UpsertListenedEpisodeInput) returns (UpsertListenedEpisodeResponse) {
+      @permission(expression: ctx.isAuthenticated)
+    }
+    update updateSecondsListened(id) with (secondsListened)
+    update updateListened(id) with (listened)
+  }
+
+  @permission(
+    actions: [get, list, create, update],
+    expression: listenedEpisode.listener == ctx.identity
+  )
+}
+
+message UnlistenedEpisodesInput {
+  podcastId ID?  // If no podcastId is provided, return all unlistened episodes for the user
+  first Number?  // Number of episodes to fetch (default 20, max 100)
+  after Text?    // Cursor for pagination
+}
+ 
+message UnlistenedEpisodesResponse {
+  episodes Episode[]
+  nextCursor Text?
+  hasNextPage Boolean
+}
+
+message UpsertListenedEpisodeInput {
+  episodeId ID
+  secondsListened Number?
+  listened Boolean?
+}
+
+message UpsertListenedEpisodeResponse {
+  id ID
+  episodeId ID
+  listenerId ID
+  listenedAt Timestamp
+  secondsListened Number
+  listened Boolean
+}

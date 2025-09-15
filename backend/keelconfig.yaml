@@ -1,0 +1,17 @@
+# See https://docs.keel.so/envvars for more info
+environment:
+
+# # See https://docs.keel.so/secrets for more info
+secrets:
+
+auth:
+  redirectUrl: http://localhost:5173/auth/callback
+  tokens:
+    # Shorter token expiry for testing
+    accessTokenExpiry: 3600
+    refreshTokenExpiry: 604800
+    refreshTokenRotationEnabled: true
+  providers:
+    - type: google
+      name: google_client
+      clientId: 175855549002-l4iqubpmpil4gpb4cbh6tab0rdkug907.apps.googleusercontent.com
